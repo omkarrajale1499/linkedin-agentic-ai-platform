@@ -194,9 +194,10 @@ export default function MessagesPage() {
     setTimeout(() => setToastMsg(null), 4000);
   };
 
-  const bottomRef  = useRef();
-  const inputRef   = useRef();
-  const pollRef    = useRef();
+  const bottomRef      = useRef();
+  const inputRef       = useRef();
+  const pollRef        = useRef();
+  const threadPollRef  = useRef();
 
   // ── Fetch profile by ID (member first, recruiter fallback) ──
   const fetchMember = useCallback(async (id) => {
@@ -263,13 +264,22 @@ export default function MessagesPage() {
 
   useEffect(() => { loadThreads(); }, [loadThreads]);
 
+  // Poll thread list every 10 s to surface new incoming messages
+  useEffect(() => {
+    if (!myId) return;
+    threadPollRef.current = setInterval(() => loadThreads(), 10000);
+    return () => clearInterval(threadPollRef.current);
+  }, [loadThreads, myId]);
+
   // ── Open a thread ──
   const openThread = async (thread) => {
     setActiveThread(thread);
     setShowChatMenu(false);
-    const nowIso = new Date().toISOString();
+    // Use the thread's own updated_at as the "seen" marker so clock skew
+    // between server and client doesn't keep the thread appearing unread.
+    const seenTs = thread.updated_at || new Date().toISOString();
     setLastSeenByThread(prev => {
-      const next = { ...prev, [thread.thread_id]: nowIso };
+      const next = { ...prev, [thread.thread_id]: seenTs };
       localStorage.setItem(`thread_last_seen_${myId}`, JSON.stringify(next));
       return next;
     });

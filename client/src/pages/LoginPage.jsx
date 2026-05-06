@@ -202,6 +202,7 @@ export default function LoginPage({ onLogin }) {
       localStorage.setItem('member_id', res.data.member_id);
       localStorage.setItem('user_name', `${firstName} ${lastName}`);
       localStorage.setItem('role',      'member');
+      if (res.data.token) localStorage.setItem('token', res.data.token);
       onLogin({ role:'member', id:res.data.member_id, name:`${firstName} ${lastName}` });
     } catch (e) {
       setServerError(e.response?.data?.detail || e?.response?.data?.error || 'Account creation failed.');

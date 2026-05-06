@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { searchJobs, getJob, saveJob, unsaveJob, savedJobs } from '../api/jobApi';
 import { submitApplication, applicationsByMember } from '../api/applicationApi';
 import { uuid } from '../api/apiClient';
+import api from '../api/apiClient';
 
 // ─────────────────────────────────────────────
 //  HELPERS
@@ -298,7 +299,14 @@ export function JobsBrowsePage() {
     setApplying(true);
     setApplyError('');
     try {
-      await submitApplication({ job_id: selected.job_id, member_id, idempotency_key: uuid() });
+      let resume_text = null;
+      let resume_url = null;
+      try {
+        const profile = await api.post('/members/get', { member_id });
+        resume_text = profile.data.resume_text || null;
+        resume_url = profile.data.resume_url || null;
+      } catch (_) {}
+      await submitApplication({ job_id: selected.job_id, member_id, resume_text, resume_url, idempotency_key: uuid() });
       setMyApps(prev => [...prev, selected.job_id]);
       showToast('Application submitted successfully');
     } catch (e) {

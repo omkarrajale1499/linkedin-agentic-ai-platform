@@ -113,7 +113,14 @@ async def create_member(
         idempotency_key=make_event_idempotency_key(body, x_idempotency_key, "profile.created", member_id),
     )
 
-    return {"member_id": member_id}
+    expire = datetime.utcnow() + timedelta(days=7)
+    tok = jwt.encode(
+        {"id": member_id, "role": "member", "exp": expire},
+        settings.jwt_secret,
+        algorithm="HS256",
+    )
+    token_str = tok if isinstance(tok, str) else (tok.decode() if isinstance(tok, bytes) else str(tok))
+    return {"member_id": member_id, "token": token_str}
 
 
 @router.post("/login")
